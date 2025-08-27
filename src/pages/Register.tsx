@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GraduationCap, User, Mail, Lock, Eye, EyeOff, Phone, BookOpen } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -18,11 +21,69 @@ const Register = () => {
     password: "",
     confirmPassword: ""
   });
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would integrate with Supabase authentication
-    console.log("Registration attempt:", formData);
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Registration Failed",
+        description: "Passwords don't match!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.role) {
+      toast({
+        title: "Registration Failed",
+        description: "Please select a role.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: formData.fullName,
+            role: formData.role,
+            phone: formData.phone,
+            student_id: formData.studentId,
+          }
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Registration Successful!",
+          description: "Please check your email to confirm your account.",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -174,8 +235,8 @@ const Register = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="hero" className="w-full">
-              Create Account
+            <Button type="submit" variant="hero" className="w-full" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
         </Card>
