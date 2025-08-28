@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockAuth } from "@/lib/mockAuth";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
@@ -23,21 +23,21 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      const { user, error } = await mockAuth.signInWithPassword(
+        formData.email,
+        formData.password
+      );
 
       if (error) {
         toast({
           title: "Login Failed",
-          description: error.message,
+          description: error,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
+          title: `Welcome back, ${user?.name}!`,
+          description: `You have successfully logged in as ${user?.role}.`,
         });
         navigate("/");
       }
@@ -125,6 +125,24 @@ const Login = () => {
               {loading ? "Signing In..." : "Sign In to Campus Connect"}
             </Button>
           </form>
+        </Card>
+
+        {/* Test Credentials */}
+        <Card className="p-4 bg-accent-light border-accent/20">
+          <div className="text-center space-y-3">
+            <h3 className="font-medium text-accent">Test Credentials</h3>
+            <div className="space-y-2 text-xs text-accent/80">
+              <div>
+                <strong>Student:</strong> student@kdacademy.edu.my (any password)
+              </div>
+              <div>
+                <strong>Faculty:</strong> faculty@kdacademy.edu.my (any password)
+              </div>
+              <div>
+                <strong>Admin:</strong> admin@kdacademy.edu.my (any password)
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Register Link */}

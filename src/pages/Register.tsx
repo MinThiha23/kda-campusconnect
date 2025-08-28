@@ -4,20 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, User, Mail, Lock, Eye, EyeOff, Phone, BookOpen } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { GraduationCap, Mail, Lock, Eye, EyeOff, User, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     phone: "",
-    studentId: "",
-    role: "",
     password: "",
     confirmPassword: ""
   });
@@ -26,55 +23,29 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setLoading(true);
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Registration Failed",
-        description: "Passwords don't match!",
+        description: "Passwords do not match.",
         variant: "destructive",
       });
+      setLoading(false);
       return;
     }
 
-    if (!formData.role) {
-      toast({
-        title: "Registration Failed",
-        description: "Please select a role.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
+    // Simulate registration delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: formData.fullName,
-            role: formData.role,
-            phone: formData.phone,
-            student_id: formData.studentId,
-          }
-        }
+      // Mock successful registration
+      toast({
+        title: "Registration Successful!",
+        description: `Welcome ${formData.name}! Your account has been created successfully.`,
       });
-
-      if (error) {
-        toast({
-          title: "Registration Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Registration Successful!",
-          description: "Please check your email to confirm your account.",
-        });
-        navigate("/login");
-      }
+      navigate("/login");
     } catch (error) {
       toast({
         title: "Registration Failed",
@@ -87,8 +58,8 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-lg space-y-6">
+    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
           <Link to="/" className="inline-flex items-center space-x-2 group">
@@ -102,32 +73,30 @@ const Register = () => {
           </Link>
           
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Join Our Community</h2>
-            <p className="text-muted-foreground">Create your account to get started</p>
+            <h2 className="text-2xl font-bold text-foreground">Join KD Academy</h2>
+            <p className="text-muted-foreground">Create your student account to get started</p>
           </div>
         </div>
 
         {/* Registration Form */}
         <Card className="p-6 bg-gradient-card border-0 shadow-card">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
             <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
+              <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="fullName"
+                  id="name"
                   type="text"
                   placeholder="Enter your full name"
                   className="pl-10"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                 />
               </div>
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
               <div className="relative">
@@ -135,7 +104,7 @@ const Register = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your.email@kdacademy.edu.my"
+                  placeholder="student@kdacademy.edu.my"
                   className="pl-10"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -144,57 +113,22 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Phone & Student ID */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+60 12-345 6789"
-                    className="pl-10"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="studentId" className="text-sm font-medium">Student ID</Label>
-                <div className="relative">
-                  <BookOpen className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="studentId"
-                    type="text"
-                    placeholder="KDA001234"
-                    className="pl-10"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, studentId: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Role Selection */}
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-sm font-medium">Role</Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="faculty">Faculty Member</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+60 12-345 6789"
+                  className="pl-10"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  required
+                />
+              </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
@@ -218,20 +152,26 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
@@ -249,13 +189,15 @@ const Register = () => {
           </Link>
         </div>
 
-        {/* Terms */}
-        <div className="text-center text-xs text-muted-foreground">
-          By creating an account, you agree to our{" "}
-          <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-          {" "}and{" "}
-          <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-        </div>
+        {/* Information Card */}
+        <Card className="p-4 bg-accent-light border-accent/20">
+          <div className="text-center space-y-2">
+            <h3 className="font-medium text-accent">Student Registration</h3>
+            <p className="text-xs text-accent/80">
+              This is a demo registration form. In a real application, this would create your student account and send verification emails.
+            </p>
+          </div>
+        </Card>
       </div>
     </div>
   );

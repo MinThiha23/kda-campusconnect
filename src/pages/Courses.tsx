@@ -11,11 +11,22 @@ import {
   Calendar,
   MapPin,
   Filter,
-  Search
+  Search,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Courses = () => {
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [enrolledCourses, setEnrolledCourses] = useState<number[]>([]);
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+
   const courses = [
     {
       id: 1,
@@ -77,6 +88,40 @@ const Courses = () => {
 
   const categories = ["All", "Mathematics", "Technology", "Business", "Arts", "Science"];
 
+  // Filter courses based on search and category
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleEnroll = (course: any) => {
+    setSelectedCourse(course);
+    setShowEnrollmentModal(true);
+  };
+
+  const confirmEnrollment = () => {
+    if (selectedCourse) {
+      setEnrolledCourses(prev => [...prev, selectedCourse.id]);
+      toast({
+        title: "Enrollment Successful!",
+        description: `You have been enrolled in ${selectedCourse.title}. Check your email for course details.`,
+        variant: "default",
+      });
+      setShowEnrollmentModal(false);
+      setSelectedCourse(null);
+    }
+  };
+
+  const cancelEnrollment = () => {
+    setShowEnrollmentModal(false);
+    setSelectedCourse(null);
+  };
+
+  const isEnrolled = (courseId: number) => enrolledCourses.includes(courseId);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -98,6 +143,8 @@ const Courses = () => {
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -108,9 +155,10 @@ const Courses = () => {
               {categories.map((category) => (
                 <Button
                   key={category}
-                  variant="outline"
+                  variant={selectedCategory === category ? "default" : "outline"}
                   size="sm"
                   className="text-xs"
+                  onClick={() => setSelectedCategory(category)}
                 >
                   {category}
                 </Button>
@@ -121,7 +169,7 @@ const Courses = () => {
 
         {/* Course Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {courses.map((course, index) => (
+          {filteredCourses.map((course, index) => (
             <Card 
               key={course.id}
               className="p-6 bg-gradient-card border-0 shadow-card hover:shadow-soft transition-all duration-300 hover:scale-105 group animate-slide-up"
@@ -193,10 +241,22 @@ const Courses = () => {
                     {course.level}
                   </Badge>
                   
-                  <Button size="sm" variant="hero" className="group-hover:scale-105 transition-transform">
-                    <BookOpen className="h-3 w-3 mr-1" />
-                    Enroll Now
-                  </Button>
+                  {isEnrolled(course.id) ? (
+                    <Button size="sm" variant="outline" className="text-green-600 border-green-600" disabled>
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Enrolled
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="hero" 
+                      className="group-hover:scale-105 transition-transform"
+                      onClick={() => handleEnroll(course)}
+                    >
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Enroll Now
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -213,15 +273,83 @@ const Courses = () => {
             Contact our academic advisors for personalized course recommendations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero">
+            <Button 
+              variant="hero"
+              onClick={() => {
+                toast({
+                  title: "Contact Request Sent!",
+                  description: "An academic advisor will contact you within 24 hours.",
+                  variant: "default",
+                });
+              }}
+            >
               Contact Academic Advisor
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: "Course Request Submitted!",
+                  description: "We'll review your request and add it to our catalog if feasible.",
+                  variant: "default",
+                });
+              }}
+            >
               Request New Course
             </Button>
           </div>
         </div>
       </main>
+
+      {/* Enrollment Confirmation Modal */}
+      {showEnrollmentModal && selectedCourse && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Confirm Enrollment</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cancelEnrollment}
+                className="h-8 w-8 p-0"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold text-foreground">{selectedCourse.title}</h4>
+                <p className="text-sm text-muted-foreground">{selectedCourse.instructor}</p>
+                <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
+                  <span>Duration: {selectedCourse.duration}</span>
+                  <span>Level: {selectedCourse.level}</span>
+                </div>
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                By enrolling in this course, you agree to attend all scheduled sessions and complete required assignments.
+              </p>
+              
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={cancelEnrollment}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmEnrollment}
+                  className="flex-1"
+                >
+                  Confirm Enrollment
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>

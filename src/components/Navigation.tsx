@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   BookOpen, 
@@ -8,11 +8,42 @@ import {
   GraduationCap,
   Users,
   Calendar,
-  BarChart3
+  BarChart3,
+  LogOut,
+  User
 } from "lucide-react";
+import { mockAuth, MockUser } from "@/lib/mockAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<MockUser | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if user is logged in on component mount
+    const currentUser = mockAuth.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await mockAuth.signOut();
+      setUser(null);
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "An error occurred while signing out.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const navItems = [
     { name: "Courses", href: "/courses", icon: BookOpen },
@@ -50,14 +81,35 @@ const Navigation = () => {
             ))}
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button variant="hero" asChild>
-              <Link to="/register">Get Started</Link>
-            </Button>
+            {user ? (
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center">
+                    <span className="text-xs font-semibold text-primary-foreground">
+                      {user.avatar}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-foreground">{user.name}</div>
+                    <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button variant="hero" asChild>
+                  <Link to="/register">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -88,18 +140,38 @@ const Navigation = () => {
                 </Link>
               ))}
               <div className="pt-4 border-t border-border mt-4">
-                <div className="space-y-2">
-                  <Button variant="ghost" className="w-full" asChild>
-                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button variant="hero" className="w-full" asChild>
-                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      Get Started
-                    </Link>
-                  </Button>
-                </div>
+                {user ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 px-3 py-2">
+                      <div className="w-8 h-8 bg-gradient-hero rounded-full flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary-foreground">
+                          {user.avatar}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground">{user.name}</div>
+                        <div className="text-xs text-muted-foreground capitalize">{user.role}</div>
+                      </div>
+                    </div>
+                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Button variant="ghost" className="w-full" asChild>
+                      <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                        Sign In
+                      </Link>
+                    </Button>
+                    <Button variant="hero" className="w-full" asChild>
+                      <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                        Get Started
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

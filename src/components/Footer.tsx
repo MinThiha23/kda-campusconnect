@@ -7,9 +7,9 @@ const Footer = () => {
       title: "Academic",
       links: [
         { name: "Course Catalog", href: "/courses" },
-        { name: "Academic Calendar", href: "/calendar" },
-        { name: "Online Learning", href: "/learning" },
-        { name: "Student Resources", href: "/resources" }
+        { name: "Academic Calendar", href: "/academic-calendar" },
+        { name: "Online Learning", href: "/online-learning" },
+        { name: "Student Resources", href: "/student-resources" }
       ]
     },
     {
@@ -18,15 +18,15 @@ const Footer = () => {
         { name: "Enrollment", href: "/enrollment" },
         { name: "Attendance", href: "/attendance" },
         { name: "Performance Tracking", href: "/performance" },
-        { name: "Support Center", href: "/support" }
+        { name: "Support Center", href: "/support-center" }
       ]
     },
     {
       title: "Community",
       links: [
-        { name: "Student Portal", href: "/portal" },
-        { name: "Faculty Hub", href: "/faculty" },
-        { name: "Alumni Network", href: "/alumni" },
+        { name: "Student Portal", href: "/student-portal" },
+        { name: "Faculty Hub", href: "/faculty-hub" },
+        { name: "Alumni Network", href: "/alumni-network" },
         { name: "Events", href: "/events" }
       ]
     }
