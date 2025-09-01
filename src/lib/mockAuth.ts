@@ -34,6 +34,14 @@ const mockUsers: MockUser[] = [
     name: 'Admin User',
     role: 'admin',
     avatar: 'AU'
+  },
+  // Add user's email for testing
+  {
+    id: '4',
+    email: 'min123mth@gmail.com',
+    name: 'Min User',
+    role: 'student',
+    avatar: 'MU'
   }
 ];
 
@@ -44,8 +52,8 @@ export const mockAuth = {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Find user by email
-    const user = mockUsers.find(u => u.email === email);
+    // Find user by email (case insensitive)
+    const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
     // Mock password validation (any password works for testing)
     if (user && password.length > 0) {
@@ -54,9 +62,17 @@ export const mockAuth = {
       return { user, error: null };
     }
     
+    // If email not found, provide helpful error message
+    if (!user) {
+      return { 
+        user: null, 
+        error: `Email not found. Try: student@kdacademy.edu.my, faculty@kdacademy.edu.my, admin@kdacademy.edu.my, or min123mth@gmail.com` 
+      };
+    }
+    
     return { 
       user: null, 
-      error: 'Invalid email or password. Try: student@kdacademy.edu.my' 
+      error: 'Invalid password. Any password should work for testing.' 
     };
   },
 

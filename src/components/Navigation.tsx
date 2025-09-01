@@ -10,7 +10,9 @@ import {
   Calendar,
   BarChart3,
   LogOut,
-  User
+  User,
+  Award,
+  FileText
 } from "lucide-react";
 import { mockAuth, MockUser } from "@/lib/mockAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +54,30 @@ const Navigation = () => {
     { name: "Community", href: "/community", icon: Users },
   ];
 
+  // Role-specific navigation items
+  const getNavItems = () => {
+    if (!user) return navItems;
+    
+    switch (user.role) {
+      case 'faculty':
+        return [
+          { name: "My Courses", href: "/faculty/courses", icon: BookOpen },
+          { name: "Grade Management", href: "/faculty/grades", icon: Award },
+          { name: "Attendance", href: "/faculty/attendance", icon: Calendar },
+          { name: "Faculty Hub", href: "/faculty-hub", icon: GraduationCap },
+        ];
+      case 'admin':
+        return [
+          { name: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
+          { name: "User Management", href: "/admin/users", icon: Users },
+          { name: "Course Management", href: "/admin/courses", icon: BookOpen },
+          { name: "Reports", href: "/admin/reports", icon: FileText },
+        ];
+      default: // student
+        return navItems;
+    }
+  };
+
   return (
     <nav className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +95,7 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
+            {getNavItems().map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
@@ -128,7 +154,7 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {navItems.map((item) => (
+              {getNavItems().map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}

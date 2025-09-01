@@ -141,6 +141,9 @@ const Login = () => {
               <div>
                 <strong>Admin:</strong> admin@kdacademy.edu.my (any password)
               </div>
+              <div>
+                <strong>Your Email:</strong> min123mth@gmail.com (any password)
+              </div>
             </div>
           </div>
         </Card>

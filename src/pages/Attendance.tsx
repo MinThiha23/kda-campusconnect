@@ -15,13 +15,29 @@ import {
   Download,
   Filter
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Attendance = () => {
   const { toast } = useToast();
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCourse, setSelectedCourse] = useState("all");
+  const [showExportOptions, setShowExportOptions] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close export options
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+        setShowExportOptions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const attendanceData = [
     {
@@ -103,11 +119,77 @@ const Attendance = () => {
   });
 
   const handleDownloadReport = () => {
+    // Calculate summary statistics
+    const totalClasses = attendanceData.length;
+    const presentCount = attendanceData.filter(record => record.status === 'present').length;
+    const absentCount = attendanceData.filter(record => record.status === 'absent').length;
+    const lateCount = attendanceData.filter(record => record.status === 'late').length;
+    const attendanceRate = ((presentCount / totalClasses) * 100).toFixed(1);
+    
+    // Create CSV content with summary and detailed records
+    const summarySection = [
+      "ATTENDANCE SUMMARY REPORT",
+      `Generated on: ${new Date().toLocaleDateString()}`,
+      "",
+      "SUMMARY STATISTICS",
+      `Total Classes,${totalClasses}`,
+      `Present,${presentCount}`,
+      `Absent,${absentCount}`,
+      `Late,${lateCount}`,
+      `Attendance Rate,${attendanceRate}%`,
+      "",
+      "DETAILED RECORDS",
+      "Course,Date,Time,Status,Instructor,Room"
+    ].join('\n');
+    
+    const csvContent = filteredAttendance.map(record => 
+      `"${record.course}","${record.date}","${record.time}","${record.status}","${record.instructor}","${record.room}"`
+    ).join('\n');
+    
+    const fullCsvContent = summarySection + '\n' + csvContent;
+    
+    // Create blob and download
+    const blob = new Blob([fullCsvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    // Create download link
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `attendance_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Report Downloaded!",
+        description: `Attendance report with ${filteredAttendance.length} records has been downloaded.`,
+        variant: "default",
+      });
+    } else {
+      // Fallback for browsers that don't support download
+      toast({
+        title: "Download Failed",
+        description: "Your browser doesn't support automatic downloads. Please copy the data manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportCSV = () => {
+    handleDownloadReport();
+    setShowExportOptions(false);
+  };
+
+  const handleExportPDF = () => {
+    // For now, we'll show a message that PDF export is coming soon
     toast({
-      title: "Report Downloaded!",
-      description: "Your attendance report has been downloaded to your device.",
+      title: "PDF Export Coming Soon!",
+      description: "PDF export functionality will be available in the next update. For now, please use CSV export.",
       variant: "default",
     });
+    setShowExportOptions(false);
   };
 
   const handleRequestAbsence = () => {
@@ -196,10 +278,35 @@ const Attendance = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">Recent Attendance</h2>
-            <Button variant="outline" onClick={handleDownloadReport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
+            <div className="relative" ref={exportRef}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowExportOptions(!showExportOptions)}
+                className="relative"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+              
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-10">
+                  <div className="py-1">
+                    <button
+                      onClick={handleExportCSV}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors"
+                    >
+                      📊 Export as CSV
+                    </button>
+                    <button
+                      onClick={handleExportPDF}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors"
+                    >
+                      📄 Export as PDF (Coming Soon)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-4">

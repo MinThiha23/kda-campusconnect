@@ -18,10 +18,28 @@ import {
   X,
   CheckCircle
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { mockAuth } from "@/lib/mockAuth";
+
+// Post interface
+interface Post {
+  id: number;
+  author: {
+    name: string;
+    avatar: string;
+    role: string;
+    course: string;
+  };
+  content: string;
+  timestamp: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  tags: string[];
+}
 
 const Community = () => {
   const { toast } = useToast();
@@ -32,54 +50,68 @@ const Community = () => {
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [joinedEvents, setJoinedEvents] = useState<number[]>([]);
   const [likedPosts, setLikedPosts] = useState<number[]>([]);
-
-  const communityPosts = [
-    {
-      id: 1,
-      author: {
-        name: "Ahmad Rahman",
-        avatar: "AR",
-        role: "Student",
-        course: "Computer Science"
-      },
-      content: "Just completed the Advanced Mathematics assignment! The calculus section was challenging but really rewarding. Anyone else working on it?",
-      timestamp: "2 hours ago",
-      likes: 12,
-      comments: 5,
-      shares: 2,
-      tags: ["Mathematics", "Study Group"]
-    },
-    {
-      id: 2,
-      author: {
-        name: "Dr. Sarah Johnson",
-        avatar: "SJ",
-        role: "Faculty",
-        course: "Mathematics"
-      },
-      content: "Great work everyone on the midterm exams! I'm impressed with the overall performance. Remember, my office hours are available for anyone who needs extra help.",
-      timestamp: "5 hours ago",
-      likes: 28,
-      comments: 8,
-      shares: 3,
-      tags: ["Faculty", "Office Hours"]
-    },
-    {
-      id: 3,
-      author: {
-        name: "Lisa Chen",
-        avatar: "LC",
-        role: "Student",
-        course: "Business Administration"
-      },
-      content: "Looking for study partners for the Business Administration final project. Anyone interested in forming a study group?",
-      timestamp: "1 day ago",
-      likes: 8,
-      comments: 12,
-      shares: 1,
-      tags: ["Study Group", "Business"]
+  
+  // Initialize posts with localStorage or default data
+  const [communityPosts, setCommunityPosts] = useState<Post[]>(() => {
+    const savedPosts = localStorage.getItem('communityPosts');
+    if (savedPosts) {
+      return JSON.parse(savedPosts);
     }
-  ];
+    
+    // Default posts
+    return [
+      {
+        id: 1,
+        author: {
+          name: "Ahmad Rahman",
+          avatar: "AR",
+          role: "Student",
+          course: "Computer Science"
+        },
+        content: "Just completed the Advanced Mathematics assignment! The calculus section was challenging but really rewarding. Anyone else working on it?",
+        timestamp: "2 hours ago",
+        likes: 12,
+        comments: 5,
+        shares: 2,
+        tags: ["Mathematics", "Study Group"]
+      },
+      {
+        id: 2,
+        author: {
+          name: "Dr. Sarah Johnson",
+          avatar: "SJ",
+          role: "Faculty",
+          course: "Mathematics"
+        },
+        content: "Great work everyone on the midterm exams! I'm impressed with the overall performance. Remember, my office hours are available for anyone who needs extra help.",
+        timestamp: "5 hours ago",
+        likes: 28,
+        comments: 8,
+        shares: 3,
+        tags: ["Faculty", "Office Hours"]
+      },
+      {
+        id: 3,
+        author: {
+          name: "Lisa Chen",
+          avatar: "LC",
+          role: "Student",
+          course: "Business Administration"
+        },
+        content: "Looking for study partners for the Business Administration final project. Anyone interested in forming a study group?",
+        timestamp: "1 day ago",
+        likes: 8,
+        comments: 12,
+        shares: 1,
+        tags: ["Study Group", "Business"]
+      }
+    ];
+  });
+
+  // Save posts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('communityPosts', JSON.stringify(communityPosts));
+  }, [communityPosts]);
 
   const upcomingEvents = [
     {
@@ -115,7 +147,7 @@ const Community = () => {
     { label: "Active Students", value: "1,247", icon: Users, color: "text-primary" },
     { label: "Study Groups", value: "23", icon: BookOpen, color: "text-secondary" },
     { label: "Events This Month", value: "8", icon: Calendar, color: "text-accent" },
-    { label: "Discussion Posts", value: "156", icon: MessageCircle, color: "text-green-600" }
+    { label: "Discussion Posts", value: communityPosts.length.toString(), icon: MessageCircle, color: "text-green-600" }
   ];
 
   // Interactive functions
@@ -142,6 +174,13 @@ const Community = () => {
         ? prev.filter(id => id !== postId)
         : [...prev, postId]
     );
+    
+    // Update post likes count
+    setCommunityPosts(prev => prev.map(post => 
+      post.id === postId 
+        ? { ...post, likes: isPostLiked(postId) ? post.likes - 1 : post.likes + 1 }
+        : post
+    ));
   };
 
   const handleSharePost = (postId: number) => {
@@ -154,11 +193,34 @@ const Community = () => {
 
   const handleSubmitPost = () => {
     if (newPostContent.trim()) {
+      const currentUser = mockAuth.getCurrentUser();
+      
+      const newPost: Post = {
+        id: Date.now(), // Use timestamp as unique ID
+        author: {
+          name: currentUser?.name || "Anonymous User",
+          avatar: currentUser?.avatar || "AU",
+          role: currentUser?.role === 'student' ? 'Student' : 
+                currentUser?.role === 'faculty' ? 'Faculty' : 'Admin',
+          course: "General"
+        },
+        content: newPostContent,
+        timestamp: "Just now",
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        tags: []
+      };
+
+      // Add new post to the beginning of the list
+      setCommunityPosts(prev => [newPost, ...prev]);
+      
       toast({
         title: "Post Created!",
         description: "Your post has been published to the community feed.",
         variant: "default",
       });
+      
       setNewPostContent("");
       setShowNewPostModal(false);
     }
@@ -183,6 +245,13 @@ const Community = () => {
       description: "You can now browse all upcoming events and activities.",
       variant: "default",
     });
+  };
+
+  const handleClearPosts = () => {
+    if (confirm("Are you sure you want to clear all posts? This will reset to default posts.")) {
+      localStorage.removeItem('communityPosts');
+      window.location.reload();
+    }
   };
 
   const isEventJoined = (eventId: number) => joinedEvents.includes(eventId);
@@ -229,10 +298,15 @@ const Community = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-foreground">Community Feed</h2>
-              <Button variant="hero" onClick={handleNewPost}>
-                <MessageCircle className="h-4 w-4 mr-2" />
-                New Post
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={handleClearPosts} className="text-xs">
+                  Clear Posts
+                </Button>
+                <Button variant="hero" onClick={handleNewPost}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  New Post
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -454,6 +528,22 @@ const Community = () => {
                 <X className="h-4 w-4" />
               </Button>
             </div>
+            
+            {/* Current User Info */}
+            {(() => {
+              const currentUser = mockAuth.getCurrentUser();
+              return currentUser ? (
+                <div className="flex items-center space-x-3 mb-4 p-3 bg-muted rounded-lg">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">{currentUser.avatar}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-sm">{currentUser.name}</div>
+                    <div className="text-xs text-muted-foreground capitalize">{currentUser.role}</div>
+                  </div>
+                </div>
+              ) : null;
+            })()}
             
             <div className="space-y-4">
               <Textarea

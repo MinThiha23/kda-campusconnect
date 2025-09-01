@@ -16,16 +16,40 @@ import {
   XCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { mockAuth } from "@/lib/mockAuth";
+import { useNavigate } from "react-router-dom";
 
 const Courses = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [enrolledCourses, setEnrolledCourses] = useState<number[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<number[]>(() => {
+    // Load enrolled courses from localStorage
+    const saved = localStorage.getItem('enrolledCourses');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Save enrolled courses to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
+  }, [enrolledCourses]);
+
+  // Check user role on component mount
+  useEffect(() => {
+    const user = mockAuth.getCurrentUser();
+    setCurrentUser(user);
+    
+    // Redirect faculty to their specific course view
+    if (user?.role === 'faculty') {
+      navigate('/faculty/courses');
+    }
+  }, [navigate]);
 
   const courses = [
     {
@@ -120,6 +144,26 @@ const Courses = () => {
     setSelectedCourse(null);
   };
 
+  const handleUnenroll = (courseId: number) => {
+    setEnrolledCourses(prev => prev.filter(id => id !== courseId));
+    toast({
+      title: "Unenrolled Successfully!",
+      description: "You have been unenrolled from this course.",
+      variant: "default",
+    });
+  };
+
+  const clearAllEnrollments = () => {
+    if (confirm("Are you sure you want to unenroll from all courses?")) {
+      setEnrolledCourses([]);
+      toast({
+        title: "All Enrollments Cleared!",
+        description: "You have been unenrolled from all courses.",
+        variant: "default",
+      });
+    }
+  };
+
   const isEnrolled = (courseId: number) => enrolledCourses.includes(courseId);
 
   return (
@@ -166,6 +210,26 @@ const Courses = () => {
             </div>
           </div>
         </div>
+
+        {/* Enrollment Status */}
+        {enrolledCourses.length > 0 && (
+          <div className="flex items-center justify-between mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">
+                Enrolled in {enrolledCourses.length} course{enrolledCourses.length > 1 ? 's' : ''}
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={clearAllEnrollments}
+              className="text-xs text-red-600 border-red-600 hover:bg-red-50"
+            >
+              Clear All Enrollments
+            </Button>
+          </div>
+        )}
 
         {/* Course Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -242,7 +306,12 @@ const Courses = () => {
                   </Badge>
                   
                   {isEnrolled(course.id) ? (
-                    <Button size="sm" variant="outline" className="text-green-600 border-green-600" disabled>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-green-600 border-green-600 hover:bg-red-50 hover:border-red-600 hover:text-red-600"
+                      onClick={() => handleUnenroll(course.id)}
+                    >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Enrolled
                     </Button>

@@ -17,6 +17,10 @@ import Enrollment from "./pages/Enrollment";
 import SupportCenter from "./pages/SupportCenter";
 import StudentPortal from "./pages/StudentPortal";
 import FacultyHub from "./pages/FacultyHub";
+import FacultyCourses from "./pages/FacultyCourses";
+import FacultyGrades from "./pages/FacultyGrades";
+import FacultyAttendance from "./pages/FacultyAttendance";
+import AdminDashboard from "./pages/AdminDashboard";
 import AlumniNetwork from "./pages/AlumniNetwork";
 import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
@@ -44,6 +48,10 @@ const App = () => (
           <Route path="/support-center" element={<SupportCenter />} />
           <Route path="/student-portal" element={<StudentPortal />} />
           <Route path="/faculty-hub" element={<FacultyHub />} />
+          <Route path="/faculty/courses" element={<FacultyCourses />} />
+          <Route path="/faculty/grades" element={<FacultyGrades />} />
+          <Route path="/faculty/attendance" element={<FacultyAttendance />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/alumni-network" element={<AlumniNetwork />} />
           <Route path="/events" element={<Events />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
